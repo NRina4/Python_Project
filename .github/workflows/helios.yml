@@ -1,9 +1,9 @@
 # Деплой того же сайта (my-project) на Helios (факультетский сервер ИТМО).
 # Роль «Static HTML»: готовый статик из my-project/site/ загружается в каталог
 # пользовательских страниц на сервере.
-# Персональные данные (логин, пароль, путь) в репозитории НЕ хранятся, только ссылки:
+# Персональные данные (логин, ключ, путь) в репозитории НЕ хранятся, только ссылки:
 #   Secrets (Settings -> Secrets and variables -> Actions -> Secrets):
-#     HELIOS_USER - логин, HELIOS_PASS - пароль (в репозитории не хранится).
+#     HELIOS_USER - логин, HELIOS_KEY - приватный SSH-ключ (в репозитории не хранится).
 #   Variables (та же страница, вкладка Variables):
 #     HELIOS_SITE_URL - базовый URL подкаталога со слэшем на конце,
 #     HELIOS_DIR - имя каталога в ~/public_html (например, lab3).
@@ -30,14 +30,6 @@ jobs:
       # 1. Исходники
       - name: Checkout
         uses: actions/checkout@v4
-
-      # 1.1. ВРЕМЕННАЯ диагностика: есть ли секреты у раннера (значения не
-      # печатаются, только факт наличия). Удалить после устранения ошибки.
-      - name: Check secrets present
-        run: |
-          test -n "${{ secrets.HELIOS_USER }}" || { echo "HELIOS_USER is empty/missing"; exit 1; }
-          test -n "${{ secrets.HELIOS_KEY }}" || { echo "HELIOS_KEY is empty/missing"; exit 1; }
-          echo "secrets present (values not shown)"
 
       # 2. Python как в .venv (3.14)
       - name: Setup Python
