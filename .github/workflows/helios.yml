@@ -36,7 +36,7 @@ jobs:
       - name: Check secrets present
         run: |
           test -n "${{ secrets.HELIOS_USER }}" || { echo "HELIOS_USER is empty/missing"; exit 1; }
-          test -n "${{ secrets.HELIOS_PASS }}" || { echo "HELIOS_PASS is empty/missing"; exit 1; }
+          test -n "${{ secrets.HELIOS_KEY }}" || { echo "HELIOS_KEY is empty/missing"; exit 1; }
           echo "secrets present (values not shown)"
 
       # 2. Python как в .venv (3.14)
@@ -66,6 +66,9 @@ jobs:
         run: mkdocs build --strict -f my-project/mkdocs.yml
 
       # 6. Загрузка готового HTML в каталог пользовательских страниц по scp (порт 2222).
+      # Аутентификация — по SSH-ключу (секрет HELIOS_KEY): парольный метод сервер
+      # не предлагает (см. ошибку attempted methods [none]), вручную ssh работает
+      # за счёт keyboard-interactive, которого у scp-клиента нет.
       # strip_components=2 срезает префикс my-project/site, чтобы файлы легли
       # в корень каталога, а не во вложенную папку.
       - name: Upload static HTML to Helios
@@ -74,7 +77,7 @@ jobs:
           host: helios.cs.ifmo.ru
           port: 2222
           username: ${{ secrets.HELIOS_USER }}
-          password: ${{ secrets.HELIOS_PASS }}
+          key: ${{ secrets.HELIOS_KEY }}
           source: 'my-project/site/*'
           target: '~/public_html/${{ vars.HELIOS_DIR }}'
           strip_components: 2
@@ -86,7 +89,7 @@ jobs:
           host: helios.cs.ifmo.ru
           port: 2222
           username: ${{ secrets.HELIOS_USER }}
-          password: ${{ secrets.HELIOS_PASS }}
+          key: ${{ secrets.HELIOS_KEY }}
           script: |
             find ~/public_html/${{ vars.HELIOS_DIR }} -type d -exec chmod 755 {} \;
             find ~/public_html/${{ vars.HELIOS_DIR }} -type f -exec chmod 644 {} \;
