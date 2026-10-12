@@ -1,0 +1,73 @@
+# Деплой основного сайта (my-project, MkDocs + Material) на GitHub Pages.
+# Официальная связка: upload-pages-artifact + deploy-pages (Source = GitHub Actions).
+# Альтернатива push в ветку gh-pages (peaceiris/actions-gh-pages) здесь не используется,
+# разница описана в отчёте (deploy.md): gh-pages пушит готовый HTML в отдельную ветку,
+# а официальный способ загружает артефакт и публикует его средствами Pages.
+name: Deploy MkDocs to GitHub Pages
+
+on:
+  # Запуск при изменении сайта или самого workflow
+  push:
+    branches: [master]
+    paths:
+      - 'my-project/**'
+      - '.github/workflows/gh-pages.yml'
+  # Ручной запуск из вкладки Actions
+  workflow_dispatch:
+
+permissions:
+  contents: read   # чтение репозитория
+  pages: write     # публикация Pages
+  id-token: write  # OIDC-токен для deploy-pages
+
+# Один активный деплой за раз, очередь без отмены
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Исходники
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Python как в .venv (3.14)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      # 3. Зависимости с точными пинами
+      - name: Install dependencies
+        run: pip install -r my-project/requirements.txt
+
+      # 4. P3: пересобрать график из данных (данные -> результат)
+      - name: Generate experiment results
+        run: python my-project/scripts/generate_results.py
+
+      # 5. Строгая сборка: битые ссылки = красный запуск (требование ТЗ)
+      # SITE_URL задаёт канонический URL для Pages (корень репозитория-сайта)
+      - name: Build site (strict)
+        env:
+          SITE_URL: 'https://nrina4.github.io/Python_Project/'
+        run: mkdocs build --strict -f my-project/mkdocs.yml
+
+      # 6. Упаковать готовый HTML для deploy-pages
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: my-project/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # 7. Публикация артефакта на GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
