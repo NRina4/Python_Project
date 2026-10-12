@@ -17,6 +17,7 @@ nav:
   - Главная: index.md
   - Анализ генераторов: research.md
   - Эксперимент: experiment.md
+  - Отчёт: report.md
 
 plugins:
   - search:

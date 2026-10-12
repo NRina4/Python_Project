@@ -43,9 +43,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r my-project/requirements.txt
 
-      # 4. P3: пересобрать график из данных (данные -> результат)
+      # 4. P3: пересобрать график из данных (данные -> результат, с кэшированием)
       - name: Generate experiment results
         run: python my-project/scripts/generate_results.py
+
+      # 4.1. P3: метка версии на странице эксперимента (коммит, дата, md5 данных)
+      - name: Stamp build version
+        run: python my-project/scripts/stamp_version.py
 
       # 5. Строгая сборка: битые ссылки = красный запуск (требование ТЗ)
       # SITE_URL задаёт канонический URL для Pages (корень репозитория-сайта)

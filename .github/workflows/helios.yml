@@ -1,0 +1,84 @@
+# Деплой того же сайта (my-project) на Helios (факультетский сервер ИТМО).
+# Роль «Static HTML»: готовый статик из my-project/site/ загружается в каталог
+# пользовательских страниц на сервере.
+# Персональные данные (логин, пароль, путь) в репозитории НЕ хранятся, только ссылки:
+#   Secrets (Settings -> Secrets and variables -> Actions -> Secrets):
+#     HELIOS_USER - логин, HELIOS_PASS - пароль (в репозитории не хранится).
+#   Variables (та же страница, вкладка Variables):
+#     HELIOS_SITE_URL - базовый URL подкаталога со слэшем на конце,
+#     HELIOS_DIR - имя каталога в ~/public_html (например, lab3).
+name: Deploy MkDocs to Helios
+
+on:
+  # Те же условия, что у gh-pages.yml: оба сайта обновляются одним push
+  push:
+    branches: [master]
+    paths:
+      - 'my-project/**'
+      - '.github/workflows/helios.yml'
+  workflow_dispatch:
+
+# Загрузка по scp меняет файлы на сервере, параллельные запуски запрещаем
+concurrency:
+  group: helios
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Исходники
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Python как в .venv (3.14)
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      # 3. Зависимости с точными пинами
+      - name: Install dependencies
+        run: pip install -r my-project/requirements.txt
+
+      # 4. P3: пересобрать график из данных (с кэшированием)
+      - name: Generate experiment results
+        run: python my-project/scripts/generate_results.py
+
+      # 4.1. P3: метка версии на странице эксперимента
+      - name: Stamp build version
+        run: python my-project/scripts/stamp_version.py
+
+      # 5. Строгая сборка с базовым URL подкаталога Helios (иначе тут типичная
+      # ошибка ТЗ: в подкаталоге ломаются абсолютные пути; у нас относительные).
+      # URL берётся из Variables, в файле его нет.
+      - name: Build site (strict)
+        env:
+          SITE_URL: ${{ vars.HELIOS_SITE_URL }}
+        run: mkdocs build --strict -f my-project/mkdocs.yml
+
+      # 6. Загрузка готового HTML в каталог пользовательских страниц по scp (порт 2222).
+      # strip_components=2 срезает префикс my-project/site, чтобы файлы легли
+      # в корень каталога, а не во вложенную папку.
+      - name: Upload static HTML to Helios
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: helios.cs.ifmo.ru
+          port: 2222
+          username: ${{ secrets.HELIOS_USER }}
+          password: ${{ secrets.HELIOS_PASS }}
+          source: 'my-project/site/*'
+          target: '~/public_html/${{ vars.HELIOS_DIR }}'
+          strip_components: 2
+
+      # 7. Права для Apache: каталоги 755, файлы 644 (иначе 403 Forbidden).
+      - name: Fix permissions on Helios
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: helios.cs.ifmo.ru
+          port: 2222
+          username: ${{ secrets.HELIOS_USER }}
+          password: ${{ secrets.HELIOS_PASS }}
+          script: |
+            find ~/public_html/${{ vars.HELIOS_DIR }} -type d -exec chmod 755 {} \;
+            find ~/public_html/${{ vars.HELIOS_DIR }} -type f -exec chmod 644 {} \;

@@ -19,3 +19,8 @@ data/experiment.csv → scripts/generate_results.py → docs/assets/result.png �
 ```
 
 Сборка сайта выполняется командой `mkdocs build`, локальный просмотр — `mkdocs serve`.
+
+## Лицензии
+
+- Код (`scripts/`, конфиги): MIT — см. `LICENSE-CODE-MIT` в корне репозитория.
+- Контент (тексты, графики, изображения): CC BY 4.0 — см. `LICENSE-CONTENT-CC-BY-4.0` в корне репозитория.
