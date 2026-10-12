@@ -1,0 +1,10 @@
+site_name: T1 Benchmark — MkDocs
+
+theme:
+  name: material
+  language: ru
+
+plugins:
+  - search:
+      lang:
+        - ru

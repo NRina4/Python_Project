@@ -1,0 +1,11 @@
+version: 1
+
+project:
+  title: Scientific Sites Benchmark
+  description: Test project for comparing static site generators
+  authors: [ ]
+  static_files:
+    - assets/plotly_graph.html
+
+site:
+  template: book-theme

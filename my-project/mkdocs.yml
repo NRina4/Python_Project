@@ -1,0 +1,36 @@
+site_name: Research Results
+site_description: Публикация результатов вычислительных экспериментов
+site_url: !ENV [SITE_URL, 'http://localhost:8000/']
+use_directory_urls: true
+
+theme:
+  name: material
+  language: ru
+  features:
+    - navigation.top
+    - navigation.sections
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Главная: index.md
+  - Анализ генераторов: research.md
+  - Эксперимент: experiment.md
+
+plugins:
+  - search:
+      lang:
+        - ru
+        - en
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js
